@@ -10,7 +10,13 @@ services:
       - .env
     volumes:
       - skins_storage_data:/app/storage/skin_images
-
+    command: >
+      sh -c "
+        if [ -f app/scripts/prestart.sh ]; then
+          bash app/scripts/prestart.sh
+        fi &&
+        uv run fastapi dev app/main.py --host 0.0.0.0 --port 80
+      "
     restart: always
     depends_on:
       postgres:
