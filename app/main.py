@@ -89,7 +89,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
 
 
-app = FastAPI(title="My Skin Scanner")
+app = FastAPI(title="My Skin Scanner", lifespan=lifespan)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
