@@ -158,7 +158,8 @@ storage_service = StorageService()
 
 
 def get_storage_service() -> StorageService:
-    return StorageService()
+    # Return the module-level singleton so tests can override its backend
+    return storage_service
 
 
 StorageDep = Annotated[StorageService, Depends(get_storage_service)]
