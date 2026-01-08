@@ -3,7 +3,11 @@ from typing import Any
 import uvicorn
 from fastapi import FastAPI, status
 
+from app.routes import images
+
 app = FastAPI(title="My Skin Scanner")
+
+app.include_router(images.router)
 
 
 @app.get("/", status_code=status.HTTP_200_OK)
