@@ -7,7 +7,7 @@ services:
     ports:
       - "8000:80"
     env_file:
-      - .env
+      - envs/dev.env
     volumes:
       - skins_storage_data:/app/storage/skin_images
     command: >
@@ -33,14 +33,32 @@ services:
     volumes:
       - skins_db_data:/var/lib/postgresql/data/pgdata
     env_file:
-      - .env
+      - envs/dev.env
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB:-skins_db}
+      - POSTGRES_HOST_AUTH_METHOD=trust  # For easier dev access
     ports:
       - "5432:5432"
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: dockerfile
+    env_file:
+      - envs/testing.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+        uv sync --group test &&
+        alembic upgrade head || true &&
+        pytest -q
+      "
+    restart: "no"
 
 volumes:
   skins_db_data:

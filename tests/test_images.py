@@ -31,7 +31,9 @@ async def test_upload_valid_image(client: AsyncClient, override_db_session, fake
 
 
 @pytest.mark.asyncio
-async def test_upload_invalid_mime_type(client: AsyncClient):
+async def test_upload_invalid_mime_type(client: AsyncClient, override_db_session, fake_session_noop):
+    # Override DB session with no-op mock since this test only checks validation
+    override_db_session(fake_session_noop)
 
     files = {"file": ("test.txt", b"hello", "text/plain")}
     response = await client.post("/api/v1/images/upload", files=files)
@@ -41,7 +43,10 @@ async def test_upload_invalid_mime_type(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_upload_file_too_large(client: AsyncClient):
+async def test_upload_file_too_large(client: AsyncClient, override_db_session, fake_session_noop):
+    # Override DB session with no-op mock since this test only checks validation
+    override_db_session(fake_session_noop)
+
     large_content = b"0" * (settings.storage_max_size + 1)
     files = {"file": ("big.jpg", large_content, "image/jpeg")}
     response = await client.post("/api/v1/images/upload", files=files)

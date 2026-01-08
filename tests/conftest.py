@@ -12,7 +12,6 @@ from app.main import app
 
 @pytest.fixture
 def override_db_session():
-    """Helper to set a `get_db_session` dependency override and auto-clean it up."""
     from app.main import app as _app
 
     def _set(override_func):
@@ -61,6 +60,25 @@ def fake_session_factory():
         return _override_get_db_session
 
     return _factory
+
+
+@pytest.fixture
+def fake_session_noop():
+    """Return a minimal no-op session override for tests that don't need database functionality."""
+    async def _override_get_db_session():
+        class FakeSession:
+            def add(self, obj):
+                pass
+
+            async def commit(self):
+                pass
+
+            async def refresh(self, obj):
+                pass
+
+        yield FakeSession()
+
+    return _override_get_db_session
 
 
 @pytest_asyncio.fixture(scope="function")

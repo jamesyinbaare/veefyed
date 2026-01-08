@@ -24,6 +24,13 @@ ENV UV_COMPILE_BYTECODE=1
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#caching
 ENV UV_LINK_MODE=copy
 
+# Install build dependencies required to compile some packages (e.g., psycopg2)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install dependencies
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -39,6 +46,8 @@ COPY ./pyproject.toml ./uv.lock ./alembic.ini  /app/
 
 COPY ./app /app/app
 
+# Include tests so pytest can run inside the image
+COPY ./tests /app/tests
 
 COPY ./alembic /app/alembic
 
