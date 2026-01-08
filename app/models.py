@@ -13,3 +13,5 @@ class Image(Base):
     mime_type = Column(String(100), nullable=False)
     file_size = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    file_name = Column(String(255), nullable=False)
+    checksum = Column(String(64), nullable=False, index=True)

@@ -8,6 +8,7 @@ from app.dependencies.database import DBSessionDep
 from app.models import Image
 from app.schemas.image import ImageAnalysisRequest, ImageAnalysisResponse, ImageUploadResponse
 from app.services.storage import StorageDep
+from app.utils import calculate_checksum
 
 router = APIRouter(prefix="/api/v1/images", tags=["images"])
 
@@ -33,8 +34,26 @@ async def upload_image(session: DBSessionDep, storage: StorageDep, file: UploadF
             detail=f"File size exceeds maximum allowed size of {settings.storage_max_size} bytes",
         )
 
+    # Calculate checksum before saving
+    checksum = calculate_checksum(content)
+
+    # Check for duplicate file
+    duplicate_stmt = select(Image).where(Image.checksum == checksum)
+    duplicate_result = await session.execute(duplicate_stmt)
+    existing_image = duplicate_result.scalar_one_or_none()
+
+    if existing_image:
+        logger.info(f"Duplicate image found: {existing_image.image_id}")
+        return ImageUploadResponse(image_id=existing_image.image_id)
+
     file_path, _ = await storage.save(content, file.filename or "unknown")
-    db_image = Image(file_path=file_path, file_size=len(content), mime_type=file.content_type)
+    db_image = Image(
+        file_path=file_path,
+        file_size=len(content),
+        mime_type=file.content_type,
+        file_name=file.filename or "unknown",
+        checksum=checksum,
+    )
     session.add(db_image)
     await session.commit()
     await session.refresh(db_image)
