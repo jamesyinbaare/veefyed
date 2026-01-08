@@ -37,6 +37,13 @@ def fake_session_assign_uuid():
             async def refresh(self, obj):
                 obj.image_id = uuid.uuid4()
 
+            async def execute(self, stmt):
+                class Result:
+                    def scalar_one_or_none(self):
+                        return None  # No duplicate found
+
+                return Result()
+
         yield FakeSession()
 
     return _override_get_db_session

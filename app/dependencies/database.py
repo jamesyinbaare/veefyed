@@ -60,7 +60,33 @@ class DatabaseSessionManager:
         if self._engine is not None:
             return  # Already configured
 
-        self._engine = create_async_engine(self._host, **self._engine_kwargs)
+        # Try to create engine and test connection
+        try:
+            temp_engine = create_async_engine(self._host, **self._engine_kwargs)
+            # Test the connection
+            async with temp_engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+            self._engine = temp_engine
+        except Exception as e:
+            error_str = str(e)
+            error_type = type(e).__name__
+            # Check if the error is about database not existing
+            if (
+                "does not exist" in error_str
+                or "InvalidCatalogNameError" in error_str
+                or error_type == "InvalidCatalogNameError"
+            ):
+                # Database doesn't exist - this should be handled by prestart.sh
+                # Log a warning and re-raise - prestart.sh should create it
+                logging.getLogger(__name__).error(
+                    f"Database does not exist. Please ensure prestart.sh creates the database. " f"Error: {e}"
+                )
+                # Re-raise to fail fast - prestart.sh should handle this
+                raise
+            else:
+                # Re-raise if it's a different error
+                raise
+
         self._sessionmaker: async_sessionmaker = async_sessionmaker(
             autocommit=False, bind=self._engine, expire_on_commit=False
         )
