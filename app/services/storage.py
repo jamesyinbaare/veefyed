@@ -3,8 +3,10 @@ import os
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Annotated
 
 import aiofiles
+from fastapi import Depends
 
 from app.config import settings
 
@@ -152,5 +154,11 @@ class StorageService:
         return await self._get_backend().get_checksum(file_path)
 
 
-# Global storage service instance
 storage_service = StorageService()
+
+
+def get_storage_service() -> StorageService:
+    return StorageService()
+
+
+StorageDep = Annotated[StorageService, Depends(get_storage_service)]
